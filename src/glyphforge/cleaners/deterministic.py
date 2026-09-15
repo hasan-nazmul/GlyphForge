@@ -24,6 +24,8 @@ class DeterministicCleaner(Cleaner):
         text = self._normalize_line_endings(text)
         text = self._strip_trailing_whitespace(text)
         text = self._normalize_blank_lines(text)
+        text = self._normalize_broken_tables(text)
+        text = self._normalize_bold_headings(text)
         text = self._normalize_heading_spacing(text)
         text = self._normalize_code_fence_style(text)
         text = self._normalize_list_markers(text)
@@ -94,3 +96,32 @@ class DeterministicCleaner(Cleaner):
     def _strip_trailing_newlines(text: str) -> str:
         """Remove excessive trailing newlines."""
         return text.rstrip("\n")
+
+    @staticmethod
+    def _normalize_broken_tables(text: str) -> str:
+        """Repair markdown tables where cells or rows are fragmented across multiple lines."""
+        from glyphforge.parser.normalizer import repair_broken_tables
+        return repair_broken_tables(text)
+
+    @staticmethod
+    def _normalize_bold_headings(text: str) -> str:
+        """Convert standalone bold lines that act as section headings into markdown headings."""
+        lines = text.split("\n")
+        result: list[str] = []
+        for i, line in enumerate(lines):
+            stripped = line.strip()
+            match = re.match(r"^\*\*([A-Za-z0-9#][^*]+)\*\*\s*$", stripped)
+            if match:
+                content = match.group(1).strip()
+                prev_blank = (i == 0) or (lines[i - 1].strip() in ("", "---"))
+                next_blank = (i == len(lines) - 1) or (lines[i + 1].strip() in ("", "---"))
+                is_sentence = content.endswith((".", ",", ";")) and not re.match(r"^(?:Q\d+|Problem\d+|Step\d+)\.", content)
+                if prev_blank and next_blank and not is_sentence and len(content) <= 120:
+                    if re.match(r"^(?:Q\d+|Problem\d+|Step\d+)\b", content, re.IGNORECASE):
+                        level = "###"
+                    else:
+                        level = "##"
+                    result.append(f"{level} {content}")
+                    continue
+            result.append(line)
+        return "\n".join(result)

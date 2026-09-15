@@ -92,17 +92,11 @@ def _build_blocks(tokens: list[Token], norm: NormalizationResult) -> list[Block]
             i += 1
             if i < len(tokens) and tokens[i].type == "inline":
                 inline_tok = tokens[i]
-                # Check if this paragraph is just a sentinel
-                resolved = _try_resolve_block_sentinel(inline_tok.content, norm)
-                if resolved is not None:
-                    blocks.append(resolved)
-                    i += 2  # skip inline + paragraph_close
-                    continue
-                children = _build_inlines(inline_tok, norm)
-            else:
-                children = []
-            blocks.append(Paragraph(children=children))
-            i += 2  # skip inline + paragraph_close
+                resolved_blocks = _split_inline_token_to_blocks(inline_tok, norm)
+                blocks.extend(resolved_blocks)
+                i += 1
+            if i < len(tokens) and tokens[i].type == "paragraph_close":
+                i += 1
             continue
 
         # ── Fenced code block ─────────────────────────────────────────
@@ -278,6 +272,50 @@ def _try_resolve_block_sentinel(text: str, norm: NormalizationResult) -> Block |
     return None
 
 
+def _split_inline_token_to_blocks(token: Token, norm: NormalizationResult) -> list[Block]:
+    """If an inline token contains embedded block sentinels (e.g. code blocks or display math
+    that markdown-it merged into a paragraph), split them into separate Block nodes.
+    """
+    import re
+    from glyphforge.parser.normalizer import SENTINEL_PREFIX, SENTINEL_SUFFIX
+
+    content = token.content
+    single = _try_resolve_block_sentinel(content, norm)
+    if single is not None:
+        return [single]
+
+    # Quick check: if no block sentinels are embedded, build inlines as normal
+    if f"{SENTINEL_PREFIX}:CODE:" not in content and f"{SENTINEL_PREFIX}:DMATH:" not in content:
+        inlines = _build_inlines(token, norm)
+        return [Paragraph(children=inlines)] if inlines else []
+
+    # Contains embedded block sentinel: split content around block sentinels
+    pattern = f"({re.escape(SENTINEL_PREFIX)}:(?:CODE|DMATH):[a-f0-9]+{re.escape(SENTINEL_SUFFIX)})"
+    parts = re.split(pattern, content)
+    from markdown_it import MarkdownIt
+    md = MarkdownIt("commonmark")
+    blocks: list[Block] = []
+
+    for part in parts:
+        part_strip = part.strip()
+        if not part_strip:
+            continue
+        entry = norm.sentinel_map.get(part_strip)
+        if entry is not None and entry.kind == "code_block":
+            blocks.append(CodeBlock(code=entry.content, language=entry.language, info=entry.info))
+        elif entry is not None and entry.kind == "display_math":
+            blocks.append(DisplayMath(latex=entry.content))
+        else:
+            sub_tokens = md.parse(part_strip)
+            for st in sub_tokens:
+                if st.type == "inline":
+                    sub_inlines = _build_inlines(st, norm)
+                    if sub_inlines:
+                        blocks.append(Paragraph(children=sub_inlines))
+
+    return blocks
+
+
 def _resolve_inline_text(text: str, norm: NormalizationResult) -> list[Inline]:
     """Split *text* around embedded sentinel placeholders and return Inline nodes.
 
@@ -440,12 +478,8 @@ def _parse_list_item_tokens(
         if tokens[i].type == "paragraph_open":
             i += 1
             if i < len(tokens) and tokens[i].type == "inline":
-                resolved = _try_resolve_block_sentinel(tokens[i].content, norm)
-                if resolved is not None:
-                    children.append(resolved)
-                else:
-                    inlines = _build_inlines(tokens[i], norm)
-                    children.append(Paragraph(children=inlines))
+                resolved_blocks = _split_inline_token_to_blocks(tokens[i], norm)
+                children.extend(resolved_blocks)
                 i += 1
             if i < len(tokens) and tokens[i].type == "paragraph_close":
                 i += 1

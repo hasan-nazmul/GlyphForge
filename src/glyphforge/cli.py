@@ -110,7 +110,7 @@ def convert(
         if not quiet:
             console.print("  Input: [dim]clipboard[/dim]\n")
     else:
-        path = Path(source)
+        path = Path(source).expanduser()
         if not path.exists():
             console.print(f"\n  ✗ File not found: {source}", style="red")
             raise typer.Exit(code=1)
@@ -120,10 +120,12 @@ def convert(
         if not quiet:
             console.print(f"  Input: [dim]{source}[/dim]\n")
 
+    output_dir = output.expanduser() if output else None
+
     result = run_pipeline(
         text=text,
         source_path=source_path,
-        output_dir=output,
+        output_dir=output_dir,
         formats=formats,
         clean=clean,
         stem=stem,
@@ -157,6 +159,7 @@ def copy(
     from glyphforge.parser.markdown_parser import parse
     from glyphforge.renderers.markdown import render_markdown
 
+    file = file.expanduser()
     if not file.exists():
         console.print(f"\n  ✗ File not found: {file}", style="red")
         raise typer.Exit(code=1)
@@ -183,6 +186,7 @@ def validate(
 
     console.print(Panel.fit("GlyphForge — Validate", style="bold cyan"))
 
+    file = file.expanduser()
     if not file.exists():
         console.print(f"\n  ✗ File not found: {file}", style="red")
         raise typer.Exit(code=1)
@@ -233,6 +237,7 @@ def clean(
 
     console.print(Panel.fit("GlyphForge — Clean", style="bold cyan"))
 
+    file = file.expanduser()
     if not file.exists():
         console.print(f"\n  ✗ File not found: {file}", style="red")
         raise typer.Exit(code=1)
@@ -242,9 +247,10 @@ def clean(
     cleaned = cleaner.clean(text)
 
     if output_file:
-        output_file.parent.mkdir(parents=True, exist_ok=True)
-        output_file.write_text(cleaned, encoding="utf-8")
-        console.print(f"\n  ✓ Cleaned output written to {output_file}", style="green")
+        out = output_file.expanduser()
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(cleaned, encoding="utf-8")
+        console.print(f"\n  ✓ Cleaned output written to {out}", style="green")
     else:
         console.print()
         console.print(cleaned)
@@ -262,6 +268,7 @@ def inspect(
 
     console.print(Panel.fit("GlyphForge — Inspect", style="bold cyan"))
 
+    file = file.expanduser()
     if not file.exists():
         console.print(f"\n  ✗ File not found: {file}", style="red")
         raise typer.Exit(code=1)

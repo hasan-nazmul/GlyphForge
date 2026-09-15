@@ -15,6 +15,7 @@ objects identifying the location and kind of each math expression found.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from enum import Enum, auto
 
@@ -89,14 +90,9 @@ def scan_math(text: str) -> list[MathSpan]:
                 i += 2
                 continue
 
-            # Check whether this is currency / shell var rather than math
-            if _is_currency_or_var(text, i, n):
-                i += 1
-                continue
-
             # Attempt inline math $...$
             span = _scan_dollar_inline(text, i, n)
-            if span is not None:
+            if span is not None and _is_valid_inline_math(text, span, n):
                 spans.append(span)
                 i = span.end
                 continue
@@ -207,12 +203,58 @@ def _scan_dollar_inline(text: str, start: int, n: int) -> MathSpan | None:
     return None
 
 
+def _is_valid_inline_math(text: str, span: MathSpan, n: int) -> bool:
+    """Validate that a scanned $...$ span is genuinely math and not currency/prose/shell-var.
+
+    Handles false positives like:
+    * Currency ranges: ``$10-$20`` (span covering ``$10-$``)
+    * Multiple currency amounts: ``($10), Option B ($20)``
+    * Currency with rate/interval: ``$10/hr-$20/hr``
+    * Trailing separators before closing dollar: ``$10,$`` or ``$10;$``
+    * Shell variable false matches: ``$FOO:$BAR`` or ``$FOO/$BAR``
+    """
+    latex = span.latex
+
+    # 1. Pure number in math ($1$, $24$, $100$, $3.14$, $1,000$, $-1$, $+5$)
+    #    In LaTeX / Markdown, writing numbers in math mode is standard.
+    if re.match(r"^[+-]?\d+([.,]\d+)*$", latex):
+        # Ensure the closing $ is not immediately followed by a digit
+        # (e.g. $10-$20 where closing $ was actually the $ of $20)
+        if span.end < n and text[span.end].isdigit():
+            return False
+        return True
+
+    # 2. If closing $ is immediately followed by a digit, the closing $ was
+    #    likely an opening currency sign of another amount (e.g. $20 in $10-$20)
+    if span.end < n and text[span.end].isdigit():
+        return False
+
+    # 3. Inline math should not end with trailing punctuation/operators right before $
+    if latex.endswith(("-", ",", ";", ":", "/")):
+        return False
+
+    # 4. If the span starts with a number (e.g. $10...):
+    if re.match(r"^\d", latex):
+        # Multiple space-separated English prose words indicate body text, not LaTeX
+        if re.search(r"[a-zA-Z]{2,}\s+[a-zA-Z]{2,}", latex):
+            return False
+        # Unbalanced parentheses indicate cross-boundary matching like ($10), ($20)
+        if latex.count("(") != latex.count(")"):
+            return False
+
+    # 5. Shell variable false matches like $FOO:$BAR -> latex="FOO:"
+    if re.match(r"^[A-Z_][A-Z0-9_]*[/:]$", latex):
+        return False
+
+    return True
+
+
 def _is_currency_or_var(text: str, pos: int, n: int) -> bool:
     """Determine if the ``$`` at *pos* is a currency sign or shell variable.
 
     Heuristics:
     * ``$`` followed by one or more digits (optionally with ``.`` and more digits),
-      then a non-letter → currency.
+      then a non-letter → currency, UNLESS followed by a closing ``$`` (math like ``$1$``, ``$24$``).
     * ``$`` followed by an uppercase letter sequence resembling a shell variable
       name (e.g. ``$PATH``, ``$HOME``), then a non-alnum boundary → shell variable.
     """
@@ -226,6 +268,9 @@ def _is_currency_or_var(text: str, pos: int, n: int) -> bool:
         j = pos + 2
         while j < n and (text[j].isdigit() or text[j] in ".,"):
             j += 1
+        # If immediately closed by $, it's inline math ($1$, $24$, $100$)
+        if j < n and text[j] == "$":
+            return False
         # After the number, must NOT be a letter that would indicate LaTeX (e.g. $3x$)
         if j >= n or not text[j].isalpha():
             return True
@@ -236,6 +281,8 @@ def _is_currency_or_var(text: str, pos: int, n: int) -> bool:
         j = pos + 1
         while j < n and (text[j].isupper() or text[j] == "_" or text[j].isdigit()):
             j += 1
+        if j < n and text[j] == "$":
+            return False
         # Shell vars are all-caps; if followed by lowercase, it's likely math
         if j > pos + 2:  # At least 2 uppercase chars
             if j >= n or not text[j].isalpha():

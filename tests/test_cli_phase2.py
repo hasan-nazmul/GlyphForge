@@ -154,10 +154,10 @@ unclosed code fence
         assert (out_dir / "malformed.md").exists()
 
     def test_large_input(self, tmp_path: Path):
-        large_parts = ["# Large Document Benchmark\\n\\n"]
+        large_parts = ["# Large Document Benchmark\n\n"]
         for i in range(200):
-            large_parts.append(f"## Section {i}\\n\\nEquation: $x_{i}^2 + y_{i}^2 = z_{i}^2$\\n\\n")
-            large_parts.append(f"```python\\ndef func_{i}():\\n    return {i} * 2\\n```\\n\\n")
+            large_parts.append(f"## Section {i}\n\nEquation: $x_{i}^2 + y_{i}^2 = z_{i}^2$\n\n")
+            large_parts.append(f"```python\ndef func_{i}():\n    return {i} * 2\n```\n\n")
         large_text = "".join(large_parts)
         test_file = tmp_path / "large.md"
         test_file.write_text(large_text, encoding="utf-8")
@@ -165,4 +165,40 @@ unclosed code fence
         result = runner.invoke(app, ["convert", str(test_file), "--output", str(out_dir), "--format", "html,md", "--quiet"])
         assert result.exit_code == 0
         assert (out_dir / "large.html").exists()
+
+    def test_repair_broken_table(self, tmp_path: Path):
+        broken_table = """# Table Test
+
+| Col A | Col B |
+| --- | --- |
+| Cell 1
+
+ | Cell 2
+
+ |
+| Cell 3 | Cell 4 |
+"""
+        test_file = tmp_path / "broken_table.md"
+        test_file.write_text(broken_table, encoding="utf-8")
+        out_dir = tmp_path / "out_tbl"
+        result = runner.invoke(app, ["convert", str(test_file), "--output", str(out_dir), "--format", "md"])
+        assert result.exit_code == 0
+        rendered_md = (out_dir / "broken_table.md").read_text()
+        assert "| Cell 1 | Cell 2 |" in rendered_md
+        assert "| Cell 3 | Cell 4 |" in rendered_md
+
+    def test_code_block_in_list_item(self, tmp_path: Path):
+        content = """1. Item with code:
+```bash
+echo hello
+```
+"""
+        test_file = tmp_path / "list_code.md"
+        test_file.write_text(content, encoding="utf-8")
+        out_dir = tmp_path / "out_list_code"
+        result = runner.invoke(app, ["convert", str(test_file), "--output", str(out_dir), "--format", "md"])
+        assert result.exit_code == 0
+        rendered_md = (out_dir / "list_code.md").read_text()
+        assert "```bash" in rendered_md
+        assert "echo hello" in rendered_md
 

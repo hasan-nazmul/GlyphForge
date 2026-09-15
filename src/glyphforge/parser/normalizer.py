@@ -68,6 +68,75 @@ def _make_sentinel(kind: str) -> str:
     return f"{SENTINEL_PREFIX}:{kind}:{uid}{SENTINEL_SUFFIX}"
 
 
+def repair_broken_tables(text: str) -> str:
+    """Repair markdown tables where cells or rows are fragmented across multiple lines with blank lines."""
+    lines = text.splitlines()
+    result: list[str] = []
+    i = 0
+    in_table = False
+    expected_pipes = 0
+
+    while i < len(lines):
+        line = lines[i]
+        stripped = line.strip()
+
+        # Check for start of a table (header row followed by delimiter row)
+        if not in_table and i + 1 < len(lines):
+            next_stripped = lines[i + 1].strip()
+            if "|" in stripped and re.match(r"^\|?\s*:?-+:?\s*(\|(\s*:?-+:?\s*\|?)+)+$", next_stripped):
+                in_table = True
+                expected_pipes = stripped.count("|")
+                result.append(line)
+                result.append(lines[i + 1])
+                i += 2
+                continue
+
+        if in_table:
+            # Table ended if line is a thematic break (---), heading (#), or bold section
+            if stripped.startswith("---") or stripped.startswith("#") or re.match(r"^\*\*[^*]+\*\*", stripped):
+                in_table = False
+                result.append(line)
+                i += 1
+                continue
+
+            # If line is completely empty, check if subsequent lines continue the table row
+            if not stripped:
+                j = i + 1
+                while j < len(lines) and not lines[j].strip():
+                    j += 1
+                if j < len(lines) and (lines[j].strip().startswith("|") or " |" in lines[j]):
+                    if result and result[-1].strip().startswith("|") and result[-1].count("|") < expected_pipes:
+                        i += 1
+                        continue
+                in_table = False
+                result.append(line)
+                i += 1
+                continue
+
+            # If current line starts with | or contains |
+            if stripped.startswith("|") or ("|" in stripped and result and result[-1].strip().startswith("|")):
+                if result and result[-1].strip().startswith("|") and result[-1].count("|") < expected_pipes:
+                    prev = result.pop()
+                    merged = prev.rstrip() + " " + stripped.lstrip()
+                    result.append(merged)
+                    i += 1
+                    continue
+                else:
+                    result.append(line)
+                    i += 1
+                    continue
+            else:
+                in_table = False
+                result.append(line)
+                i += 1
+                continue
+        else:
+            result.append(line)
+            i += 1
+
+    return "\n".join(result)
+
+
 def normalize(text: str) -> NormalizationResult:
     """Run Pass 1: protect code blocks and math, normalize delimiters.
 
@@ -75,6 +144,9 @@ def normalize(text: str) -> NormalizationResult:
     and a map from sentinel strings to their original content.
     """
     sentinel_map: dict[str, SentinelEntry] = {}
+
+    # ── Step 0: Repair fragmented tables ──────────────────────────────
+    text = repair_broken_tables(text)
 
     # ── Step 1: Protect fenced code blocks ────────────────────────────
     def _replace_code(match: re.Match[str]) -> str:
@@ -89,7 +161,7 @@ def normalize(text: str) -> NormalizationResult:
             language=language,
             info=info_string,
         )
-        return sentinel
+        return f"\n\n{sentinel}\n\n"
 
     text = _FENCED_CODE_RE.sub(_replace_code, text)
 

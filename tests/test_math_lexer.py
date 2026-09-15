@@ -82,6 +82,59 @@ class TestCurrencyDetection:
         spans = scan_math("Revenue was $1,000,000 this quarter.")
         assert len(spans) == 0
 
+    def test_currency_range(self):
+        spans = scan_math("Prices: $10-$20")
+        assert len(spans) == 0
+
+    def test_multiple_currency_items(self):
+        spans = scan_math("Option A ($10), Option B ($20)")
+        assert len(spans) == 0
+
+    def test_currency_rate(self):
+        spans = scan_math("Compare $10/hr with $20/hr.")
+        assert len(spans) == 0
+
+
+class TestNumericInlineMath:
+    """Test that numbers enclosed in single dollars are correctly detected as math."""
+
+    def test_single_digits(self):
+        spans = scan_math("Always $1$ and $0$ are bits.")
+        assert len(spans) == 2
+        assert spans[0].latex == "1"
+        assert spans[1].latex == "0"
+
+    def test_multi_digits(self):
+        spans = scan_math("Precision has $24$ bits from $23$ stored bits.")
+        assert len(spans) == 2
+        assert spans[0].latex == "24"
+        assert spans[1].latex == "23"
+
+    def test_decimal_and_negative(self):
+        spans = scan_math("Values $3.14$ and $-1$ and $+5$.")
+        assert len(spans) == 3
+        assert spans[0].latex == "3.14"
+        assert spans[1].latex == "-1"
+        assert spans[2].latex == "+5"
+
+    def test_math_starting_with_digit(self):
+        spans = scan_math("Values $2^n$ and $1 + 1 = 2$ and $1/2$ and $10^{-3}$.")
+        assert len(spans) == 4
+        assert spans[0].latex == "2^n"
+        assert spans[1].latex == "1 + 1 = 2"
+        assert spans[2].latex == "1/2"
+        assert spans[3].latex == "10^{-3}"
+
+    def test_ieee754_clause(self):
+        text = (
+            "Because the leading bit of every nonzero normalized number is always $1$, "
+            "it does not need to be stored in memory. Hiding this bit gains an extra bit "
+            "of precision ($24$ bits from $23$ stored bits in single precision; "
+            "$53$ bits from $52$ stored bits in double precision)."
+        )
+        spans = scan_math(text)
+        assert [s.latex for s in spans] == ["1", "24", "23", "53", "52"]
+
 
 class TestShellVariables:
     """Test that shell variables are NOT detected as math."""
