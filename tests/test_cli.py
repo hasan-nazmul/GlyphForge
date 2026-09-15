@@ -13,7 +13,7 @@ class TestVersion:
     def test_version_flag(self):
         result = runner.invoke(app, ["--version"])
         assert result.exit_code == 0
-        assert "GlyphForge" in result.stdout
+        assert "NoteFlux" in result.stdout
 
 
 class TestConvert:

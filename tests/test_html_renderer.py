@@ -67,7 +67,7 @@ class TestHTMLRendererBasics:
     def test_empty_metadata_does_not_break(self):
         doc = Document(blocks=[Paragraph([Text("No metadata here")])])
         html = render_html(doc)
-        assert "<title>GlyphForge Document</title>" in html
+        assert "<title>NoteFlux Document</title>" in html
         assert "<p>No metadata here</p>" in html
 
 

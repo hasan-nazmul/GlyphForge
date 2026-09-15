@@ -443,7 +443,7 @@ def _sanitize_url(url: str) -> str:
 
 def _wrap_standalone(body_content: str, document: Document, theme: str) -> str:
     """Wrap rendered body in a complete standalone HTML document with offline assets."""
-    title = document.metadata.title or "GlyphForge Document"
+    title = document.metadata.title or "NoteFlux Document"
     escaped_title = html.escape(title)
 
     # Metadata tags

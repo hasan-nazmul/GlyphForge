@@ -1,4 +1,4 @@
-"""GlyphForge CLI — the ``note`` command.
+"""NoteFlux CLI — the ``note`` command.
 
 Commands
 --------
@@ -24,7 +24,7 @@ from glyphforge.config import ALL_FORMATS, OutputFormat
 
 app = typer.Typer(
     name="note",
-    help="GlyphForge — Convert LLM responses into clean, structured technical notes.",
+    help="NoteFlux — Convert LLM responses into clean, structured technical notes.",
     add_completion=False,
     no_args_is_help=True,
 )
@@ -33,7 +33,7 @@ console = Console()
 
 def _version_callback(value: bool) -> None:
     if value:
-        console.print(f"GlyphForge v{__version__}")
+        console.print(f"NoteFlux v{__version__}")
         raise typer.Exit()
 
 
@@ -48,7 +48,7 @@ def main(
         is_eager=True,
     ),
 ) -> None:
-    """GlyphForge — deterministic document preservation and rendering pipeline."""
+    """NoteFlux — deterministic document preservation and rendering pipeline."""
     pass
 
 
@@ -90,7 +90,7 @@ def convert(
 
     if not quiet:
         console.print()
-        console.print("  [bold cyan]GlyphForge[/bold cyan]")
+        console.print("  [bold cyan]NoteFlux[/bold cyan]")
         console.print("  " + "─" * 32)
 
     # Determine formats
@@ -184,7 +184,7 @@ def validate(
     from glyphforge.parser.markdown_parser import parse
     from glyphforge.validation.validator import validate as do_validate
 
-    console.print(Panel.fit("GlyphForge — Validate", style="bold cyan"))
+    console.print(Panel.fit("NoteFlux — Validate", style="bold cyan"))
 
     file = file.expanduser()
     if not file.exists():
@@ -235,7 +235,7 @@ def clean(
     """Normalize messy LLM output using deterministic rules."""
     from glyphforge.cleaners.deterministic import DeterministicCleaner
 
-    console.print(Panel.fit("GlyphForge — Clean", style="bold cyan"))
+    console.print(Panel.fit("NoteFlux — Clean", style="bold cyan"))
 
     file = file.expanduser()
     if not file.exists():
@@ -266,7 +266,7 @@ def inspect(
     from glyphforge.parser.markdown_parser import parse
     from glyphforge.validation.validator import validate as do_validate
 
-    console.print(Panel.fit("GlyphForge — Inspect", style="bold cyan"))
+    console.print(Panel.fit("NoteFlux — Inspect", style="bold cyan"))
 
     file = file.expanduser()
     if not file.exists():

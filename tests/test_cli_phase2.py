@@ -72,7 +72,7 @@ class TestPhase2Convert:
         assert result.exit_code == 0
         assert (output_dir / "technical_note.html").exists()
         # In quiet mode, standard verbose banners are suppressed
-        assert "GlyphForge — Convert" not in result.stdout
+        assert "NoteFlux" not in result.stdout
 
     def test_convert_from_clipboard(self, tmp_path: Path):
         output_dir = tmp_path / "output"

@@ -1,9 +1,10 @@
 <div align="center">
 
-# ⚡ GlyphForge
+# ⚡ NoteFlux
 
 ### *Local-First Technical Document Preservation & Rendering Engine*
 
+[![PyPI](https://img.shields.io/badge/PyPI-noteflux-blue?style=flat-square&logo=pypi)](https://pypi.org/project/noteflux/)
 [![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12-blue?style=flat-square&logo=python)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 [![Tests](https://img.shields.io/badge/Tests-153%20Passing-brightgreen?style=flat-square)](tests/)
@@ -13,14 +14,14 @@
 <br/>
 
 > **LLM responses make great raw thoughts, but terrible final documents.**  
-> GlyphForge restores the equations, tables, code blocks, and structure that copy/paste destroys.
+> NoteFlux restores the equations, tables, code blocks, and structure that copy/paste destroys.
 
 <br/>
 
 ```
   ChatGPT / Claude / Gemini / DeepSeek
                    ↓
-              GlyphForge
+               NoteFlux
                    ↓
   ┌────────────┬───────────┬────────────┐
   ↓            ↓           ↓            ↓
@@ -39,7 +40,7 @@ Markdown     HTML         PDF          DOCX
 
 **From PyPI:**
 ```bash
-pip install glyphforge
+pip install noteflux
 ```
 
 **From source:**
