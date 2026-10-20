@@ -68,44 +68,77 @@ def _make_sentinel(kind: str) -> str:
     return f"{SENTINEL_PREFIX}:{kind}:{uid}{SENTINEL_SUFFIX}"
 
 
+def _is_table_delimiter_row(s: str) -> bool:
+    clean = re.sub(r"^>\s*", "", s).strip()
+    return bool(re.match(r"^\|?\s*:?-+:?\s*(\|(\s*:?-+:?\s*\|?)+)+$", clean))
+
+
+def _is_row_complete(row: str, expected_cols: int, has_outer_pipes: bool) -> bool:
+    s = re.sub(r"^>\s*", "", row).strip()
+    if has_outer_pipes and not (s.startswith("|") and s.endswith("|") and len(s) > 1):
+        return False
+    core = s.strip("|")
+    cells = re.split(r"(?<!\\)\|", core)
+    return len(cells) >= expected_cols
+
+
 def repair_broken_tables(text: str) -> str:
     """Repair markdown tables where cells or rows are fragmented across multiple lines with blank lines."""
     lines = text.splitlines()
     result: list[str] = []
     i = 0
     in_table = False
-    expected_pipes = 0
+    expected_cols = 0
+    has_outer_pipes = False
 
     while i < len(lines):
         line = lines[i]
         stripped = line.strip()
 
-        # Check for start of a table (header row followed by delimiter row)
-        if not in_table and i + 1 < len(lines):
-            next_stripped = lines[i + 1].strip()
-            if "|" in stripped and re.match(r"^\|?\s*:?-+:?\s*(\|(\s*:?-+:?\s*\|?)+)+$", next_stripped):
+        # Check for start of a table (look ahead past blank or solitary pipe lines)
+        if not in_table and "|" in stripped:
+            k = i + 1
+            while k < len(lines) and (not lines[k].strip() or lines[k].strip() in ("|", " |", "\\|")):
+                k += 1
+            if k < len(lines) and _is_table_delimiter_row(lines[k].strip()):
                 in_table = True
-                expected_pipes = stripped.count("|")
-                result.append(line)
-                result.append(lines[i + 1])
-                i += 2
+                delim_line = lines[k].strip()
+                clean_delim = re.sub(r"^>\s*", "", delim_line).strip("|")
+                expected_cols = len(re.split(r"(?<!\\)\|", clean_delim))
+                norm_header = stripped
+                if norm_header.startswith("|") and not norm_header.endswith("|"):
+                    norm_header = norm_header + " |"
+                has_outer_pipes = norm_header.startswith("|") and norm_header.endswith("|")
+                result.append(norm_header)
+                result.append(delim_line)
+                i = k + 1
                 continue
 
         if in_table:
-            # Table ended if line is a thematic break (---), heading (#), or bold section
-            if stripped.startswith("---") or stripped.startswith("#") or re.match(r"^\*\*[^*]+\*\*", stripped):
+            # Table ended if line is a thematic break, heading, or code fence
+            clean = re.sub(r"^>\s*", "", stripped)
+            if (
+                clean.startswith("#")
+                or re.match(r"^---+$", clean)
+                or clean.startswith("```")
+                or clean.startswith("~~~")
+            ):
                 in_table = False
                 result.append(line)
                 i += 1
                 continue
 
-            # If line is completely empty, check if subsequent lines continue the table row
+            # If line is completely empty, check if subsequent lines continue the table
             if not stripped:
                 j = i + 1
                 while j < len(lines) and not lines[j].strip():
                     j += 1
-                if j < len(lines) and (lines[j].strip().startswith("|") or " |" in lines[j]):
-                    if result and result[-1].strip().startswith("|") and result[-1].count("|") < expected_pipes:
+                if j < len(lines):
+                    next_clean = re.sub(r"^>\s*", "", lines[j].strip())
+                    if next_clean.startswith("|") or " |" in next_clean:
+                        i += 1
+                        continue
+                    if result and not _is_row_complete(result[-1], expected_cols, has_outer_pipes):
                         i += 1
                         continue
                 in_table = False
@@ -113,28 +146,35 @@ def repair_broken_tables(text: str) -> str:
                 i += 1
                 continue
 
-            # If current line starts with | or contains |
-            if stripped.startswith("|") or ("|" in stripped and result and result[-1].strip().startswith("|")):
-                if result and result[-1].strip().startswith("|") and result[-1].count("|") < expected_pipes:
-                    prev = result.pop()
-                    merged = prev.rstrip() + " " + stripped.lstrip()
-                    result.append(merged)
-                    i += 1
-                    continue
+            # Check if previous row in result is incomplete and current line is continuation
+            if result and not _is_row_complete(result[-1], expected_cols, has_outer_pipes):
+                prev = result.pop()
+                if prev.rstrip().endswith("|") and clean.startswith("|"):
+                    merged = prev.rstrip() + clean.lstrip()[1:]
                 else:
-                    result.append(line)
-                    i += 1
-                    continue
+                    sep = " " if not prev.endswith(" ") and not prev.endswith("|") and not clean.startswith("|") else ""
+                    merged = prev.rstrip() + sep + clean.lstrip()
+                result.append(merged)
+                i += 1
+                continue
+
+            # Complete row or new line
+            if "|" in clean:
+                result.append(line)
+                i += 1
             else:
                 in_table = False
                 result.append(line)
                 i += 1
-                continue
         else:
             result.append(line)
             i += 1
 
     return "\n".join(result)
+
+
+# ── Regex for inline code containing pipe characters ────────────────────────
+_INLINE_CODE_PIPE_RE = re.compile(r"(`+)([^`\n]*\|[^`\n]*)\1")
 
 
 def normalize(text: str) -> NormalizationResult:
@@ -164,6 +204,24 @@ def normalize(text: str) -> NormalizationResult:
         return f"\n\n{sentinel}\n\n"
 
     text = _FENCED_CODE_RE.sub(_replace_code, text)
+
+    # ── Step 1.5: Protect inline code containing pipes in table rows ────
+    def _replace_inline_code_pipe(match: re.Match[str]) -> str:
+        code_content = match.group(2)
+        sentinel = _make_sentinel("ICODE")
+        sentinel_map[sentinel] = SentinelEntry(
+            sentinel=sentinel,
+            kind="inline_code",
+            content=code_content,
+        )
+        return sentinel
+
+    norm_lines: list[str] = []
+    for line in text.splitlines():
+        if "|" in line and "`" in line:
+            line = _INLINE_CODE_PIPE_RE.sub(_replace_inline_code_pipe, line)
+        norm_lines.append(line)
+    text = "\n".join(norm_lines)
 
     # ── Step 2: Protect display math blocks ───────────────────────────
     def _replace_display_dollar(match: re.Match[str]) -> str:

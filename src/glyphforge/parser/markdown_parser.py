@@ -359,6 +359,8 @@ def _resolve_inline_text(text: str, norm: NormalizationResult) -> list[Inline]:
                 result.append(InlineMath(latex=entry.content))
             elif entry.kind == "code_block":
                 result.append(InlineCode(code=entry.content))
+            elif entry.kind == "inline_code":
+                result.append(InlineCode(code=entry.content))
             else:
                 result.append(Text(content=sentinel))
         else:

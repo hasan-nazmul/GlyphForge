@@ -99,6 +99,7 @@ class PDFRenderer(BaseRenderer):
             f"fontsize={fontsize}",
             "-V",
             "documentclass=article",
+            "--highlight-style=tango",
         ]
 
         if toc:

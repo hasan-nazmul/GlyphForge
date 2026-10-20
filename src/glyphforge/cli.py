@@ -361,5 +361,43 @@ def _parse_formats(format_str: str | None) -> frozenset[OutputFormat]:
     return frozenset(result)
 
 
+@app.command()
+def doctor() -> None:
+    """Check availability of external tools (Pandoc, Tectonic, XeLaTeX, clipboard)."""
+    from rich.table import Table as RichTable
+    from glyphforge.deps import check_all
+
+    table = RichTable(title="NoteFlux System Dependencies", header_style="bold cyan")
+    table.add_column("Tool", style="bold")
+    table.add_column("Status", justify="center")
+    table.add_column("Version / Path", style="dim")
+    table.add_column("Notes / Install Guidance")
+
+    statuses = check_all()
+    all_ok = True
+
+    for s in statuses:
+        if s.found:
+            status_text = "[bold green]✓ Available[/bold green]"
+            detail = f"{s.version or ''} ({s.path})" if s.version else str(s.path or "")
+            hint = "[dim]Ready for use[/dim]"
+        else:
+            status_text = "[bold red]✗ Missing[/bold red]"
+            detail = "-"
+            hint = f"[yellow]{s.install_hint}[/yellow]"
+            if s.name in ("pandoc", "tectonic"):
+                all_ok = False
+
+        table.add_row(s.name, status_text, detail, hint)
+
+    console.print()
+    console.print(table)
+    console.print()
+    if all_ok:
+        console.print("  [bold green]✓ All core conversion tools are configured properly![/bold green]\n")
+    else:
+        console.print("  [bold yellow]! Some optional tools are missing. PDF/DOCX rendering may be limited.[/bold yellow]\n")
+
+
 if __name__ == "__main__":
     app()

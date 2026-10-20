@@ -26,6 +26,8 @@ from glyphforge.model.blocks import (
     ListItem,
     Paragraph,
     Table,
+    TableAlignment,
+    TableCell,
     ThematicBreak,
 )
 from glyphforge.model.document import Document
@@ -215,31 +217,64 @@ def _render_inline(node: Inline) -> str:
     return ""
 
 
+def _render_table_cell(cell: TableCell) -> str:
+    """Render a table cell, guaranteeing no raw newlines or unescaped pipes break the table."""
+    parts: list[str] = []
+    for node in cell.children:
+        if isinstance(node, HardBreak):
+            parts.append("<br>")
+        elif isinstance(node, SoftBreak):
+            parts.append(" ")
+        elif isinstance(node, InlineCode):
+            escaped = node.code.replace("|", "\\|")
+            if "`" in escaped:
+                parts.append(f"`` {escaped} ``")
+            else:
+                parts.append(f"`{escaped}`")
+        elif isinstance(node, Text):
+            escaped = node.content.replace("|", "\\|").replace("\r\n", " ").replace("\n", " ")
+            parts.append(escaped)
+        else:
+            rendered = _render_inline(node)
+            parts.append(rendered.replace("\r\n", " ").replace("\n", " "))
+    return "".join(parts).strip()
+
+
 def _render_table(table: Table, indent: str) -> str:
-    """Render a pipe table."""
+    """Render a pipe table with proportional column separators for Pandoc LaTeX."""
     lines: list[str] = []
 
-    # Header row
-    header_cells = [_render_inlines(cell.children) for cell in table.headers]
+    header_cells = [_render_table_cell(cell) for cell in table.headers]
+    rendered_rows = [[_render_table_cell(cell) for cell in row] for row in table.rows]
+
+    # Calculate column widths based on maximum cell length in each column
+    col_widths = [len(h) for h in header_cells]
+    for row in rendered_rows:
+        for idx, cell_str in enumerate(row):
+            if idx < len(col_widths):
+                col_widths[idx] = max(col_widths[idx], len(cell_str))
+            else:
+                col_widths.append(len(cell_str))
+
     lines.append(f"{indent}| {' | '.join(header_cells)} |")
 
-    # Separator row
+    # Proportional delimiter dashes (Pandoc uses dash ratios for PDF column widths)
     separators: list[str] = []
     for i, alignment in enumerate(table.alignments):
-        if alignment.value == "center":
-            separators.append(":---:")
-        elif alignment.value == "right":
-            separators.append("---:")
-        elif alignment.value == "left":
-            separators.append(":---")
+        w = min(max(col_widths[i] if i < len(col_widths) else 3, 3), 60)
+        dashes = "-" * max(w - (2 if alignment == TableAlignment.CENTER else 1 if alignment in (TableAlignment.LEFT, TableAlignment.RIGHT) else 0), 1)
+        if alignment == TableAlignment.CENTER:
+            separators.append(f":{dashes}:")
+        elif alignment == TableAlignment.RIGHT:
+            separators.append(f"{dashes}:")
+        elif alignment == TableAlignment.LEFT:
+            separators.append(f":{dashes}")
         else:
-            separators.append("---")
+            separators.append(dashes)
     lines.append(f"{indent}| {' | '.join(separators)} |")
 
-    # Data rows
-    for row in table.rows:
-        cells = [_render_inlines(cell.children) for cell in row]
-        lines.append(f"{indent}| {' | '.join(cells)} |")
+    for row in rendered_rows:
+        lines.append(f"{indent}| {' | '.join(row)} |")
 
     return "\n".join(lines)
 
