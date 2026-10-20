@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11", "3.12"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
 
     steps:
       - name: Check out source
@@ -29,3 +29,20 @@ jobs:
 
       - name: Run tests
         run: pytest -q
+
+      - name: Build distributions
+        run: python -m build
+
+      - name: Validate package metadata
+        run: python -m twine check dist/*
+
+      - name: Smoke-test installed wheel
+        run: |
+          python -m venv "$RUNNER_TEMP/noteflux-wheel"
+          "$RUNNER_TEMP/noteflux-wheel/bin/pip" install dist/*.whl
+          "$RUNNER_TEMP/noteflux-wheel/bin/note" --version
+          mkdir -p "$RUNNER_TEMP/noteflux-output"
+          "$RUNNER_TEMP/noteflux-wheel/bin/note" convert tests/fixtures/input/math.md \
+            --format md,html --output "$RUNNER_TEMP/noteflux-output" --quiet
+          test -s "$RUNNER_TEMP/noteflux-output/math.md"
+          test -s "$RUNNER_TEMP/noteflux-output/math.html"

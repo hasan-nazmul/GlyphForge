@@ -1,25 +1,18 @@
-<div align="center">
-
 # ⚡ NoteFlux
 
-### *Local-First Technical Document Preservation & Rendering Engine*
+## Local-First Technical Document Preservation & Rendering Engine
 
 [![PyPI](https://img.shields.io/badge/PyPI-noteflux-blue?style=flat-square&logo=pypi)](https://pypi.org/project/noteflux/)
-[![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12-blue?style=flat-square&logo=python)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue?style=flat-square&logo=python)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-166%20Passing-brightgreen?style=flat-square)](tests/)
 [![CI](https://github.com/hasan-nazmul/GlyphForge/actions/workflows/ci.yml/badge.svg)](https://github.com/hasan-nazmul/GlyphForge/actions/workflows/ci.yml)
-[![Architecture](https://img.shields.io/badge/Architecture-Local--First-orange?style=flat-square)](#core-principles)
-[![Privacy](https://img.shields.io/badge/Cloud%20Dependencies-Zero-red?style=flat-square)](#core-principles)
-
-<br/>
+![Architecture](https://img.shields.io/badge/Architecture-Local--First-orange?style=flat-square)
+![Privacy](https://img.shields.io/badge/Cloud%20Dependencies-Zero-red?style=flat-square)
 
 > **LLM responses make great raw thoughts, but terrible final documents.**  
 > NoteFlux restores the equations, tables, code blocks, and structure that copy/paste destroys.
 
-<br/>
-
-```
+```text
   ChatGPT / Claude / Gemini / DeepSeek
                    ↓
                NoteFlux
@@ -31,8 +24,6 @@ Markdown     HTML         PDF          DOCX
  Source)    KaTeX)      LaTeX)        OMML)
 ```
 
-</div>
-
 ---
 
 ## 🚀 Quickstart
@@ -40,23 +31,27 @@ Markdown     HTML         PDF          DOCX
 ### 1. Installation
 
 **From PyPI:**
+
 ```bash
 pip install noteflux
 ```
 
 **From source:**
+
 ```bash
 git clone https://github.com/hasan-nazmul/GlyphForge.git && cd GlyphForge
 pip install -e ".[dev]"
 ```
 
 Run the test suite with:
+
 ```bash
 pytest -q
 ```
 
 Markdown and HTML rendering work after installation. PDF, DOCX, and clipboard
 commands additionally need the matching system tools:
+
 ```bash
 sudo apt install -y pandoc wl-clipboard xclip
 curl --proto '=https' --tlsv1.2 -fsSL https://drop-sh.fullyjustified.net | sh  # Tectonic
@@ -86,8 +81,7 @@ note copy lecture.md
 note inspect demo/technical_note.md
 ```
 
-<details>
-<summary><b>🔍 Sample Output: <code>note inspect</code></b></summary>
+### Sample Output: `note inspect`
 
 ```text
   Document Structure
@@ -100,7 +94,6 @@ note inspect demo/technical_note.md
   Lists:           5
   Front matter:    yes (title: "Advanced Machine Learning & Optimization Notes")
 ```
-</details>
 
 ---
 
@@ -111,7 +104,7 @@ note inspect demo/technical_note.md
 | **`.md`** | Canonical Serializer | **Immutable Source of Truth** — always preserved first. |
 | **`.html`** | Offline KaTeX + Pygments | Standalone HTML5 with 100% offline bundled math & code styles. |
 | **`.pdf`** | Pandoc + Tectonic | Crisp vector LaTeX typesetting, 1-inch margins, TOC, no raster math. |
-| **`.docx`** | Pandoc + Reference Template | Genuine editable Word document with native `<m:oMath>` equations. |
+| **`.docx`** | Pandoc + Reference Template | Genuine editable Word document with native OMML equations. |
 
 ---
 
@@ -125,6 +118,4 @@ note inspect demo/technical_note.md
 
 ---
 
-<div align="center">
-  <sub>Built with precision for engineers, researchers, and technical writers. MIT Licensed.</sub>
-</div>
+Built with precision for engineers, researchers, and technical writers. MIT Licensed.

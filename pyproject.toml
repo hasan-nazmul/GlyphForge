@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "noteflux"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Convert raw LLM responses into clean, structured technical notes with preserved mathematics, code, and tables."
 readme = "README.md"
 license = {text = "MIT"}
@@ -22,6 +22,8 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Text Processing :: Markup :: Markdown",
     "Topic :: Text Processing :: Markup :: LaTeX",
 ]
@@ -40,6 +42,7 @@ dev = [
     "build>=1.2",
     "pytest>=7.0",
     "ruff>=0.1",
+    "twine>=5.0",
 ]
 
 [project.scripts]
@@ -49,6 +52,9 @@ glyphforge = "glyphforge.cli:app"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.dynamic]
+version = {attr = "glyphforge.__version__"}
 
 [tool.setuptools.package-data]
 glyphforge = ["assets/**/*", "templates/*"]
