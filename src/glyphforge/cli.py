@@ -11,7 +11,6 @@ Commands
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 from typing import Optional
 
@@ -261,8 +260,8 @@ def inspect(
     file: Path = typer.Argument(help="Path to Markdown file to inspect."),
 ) -> None:
     """Show document structure analysis (heading counts, equation counts, etc.)."""
-    from glyphforge.model.blocks import BlockQuote, CodeBlock, DisplayMath, Heading, List, Paragraph, Table
-    from glyphforge.model.inlines import InlineMath, Link
+    from glyphforge.model.blocks import BlockQuote, CodeBlock, Heading, List, Paragraph, Table
+    from glyphforge.model.inlines import Link
     from glyphforge.parser.markdown_parser import parse
     from glyphforge.validation.validator import validate as do_validate
 

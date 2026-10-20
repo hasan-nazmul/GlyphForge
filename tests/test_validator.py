@@ -11,7 +11,7 @@ from glyphforge.model.blocks import (
 )
 from glyphforge.model.document import Document
 from glyphforge.model.inlines import InlineMath, Text
-from glyphforge.validation.validator import Severity, validate
+from glyphforge.validation.validator import validate
 
 
 class TestHeadingHierarchy:

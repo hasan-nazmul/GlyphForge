@@ -17,7 +17,7 @@ import re
 import uuid
 from dataclasses import dataclass, field
 
-from glyphforge.parser.math_lexer import MathKind, MathSpan, scan_math
+from glyphforge.parser.math_lexer import MathKind, scan_math
 
 SENTINEL_PREFIX = "\uE000GLYPH"
 SENTINEL_SUFFIX = "\uE001"

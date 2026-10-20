@@ -7,9 +7,10 @@
 [![PyPI](https://img.shields.io/badge/PyPI-noteflux-blue?style=flat-square&logo=pypi)](https://pypi.org/project/noteflux/)
 [![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12-blue?style=flat-square&logo=python)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-153%20Passing-brightgreen?style=flat-square)](tests/)
-[![Architecture](https://img.shields.io/badge/Architecture-Local--First-orange?style=flat-square)]()
-[![Privacy](https://img.shields.io/badge/Cloud%20Dependencies-Zero-red?style=flat-square)]()
+[![Tests](https://img.shields.io/badge/Tests-166%20Passing-brightgreen?style=flat-square)](tests/)
+[![CI](https://github.com/hasan-nazmul/GlyphForge/actions/workflows/ci.yml/badge.svg)](https://github.com/hasan-nazmul/GlyphForge/actions/workflows/ci.yml)
+[![Architecture](https://img.shields.io/badge/Architecture-Local--First-orange?style=flat-square)](#core-principles)
+[![Privacy](https://img.shields.io/badge/Cloud%20Dependencies-Zero-red?style=flat-square)](#core-principles)
 
 <br/>
 
@@ -46,15 +47,23 @@ pip install noteflux
 **From source:**
 ```bash
 git clone https://github.com/hasan-nazmul/GlyphForge.git && cd GlyphForge
-pip install -r requirements.txt
-pip install -e .
+pip install -e ".[dev]"
 ```
 
-*Optional external tools for PDF & Word rendering:*
+Run the test suite with:
+```bash
+pytest -q
+```
+
+Markdown and HTML rendering work after installation. PDF, DOCX, and clipboard
+commands additionally need the matching system tools:
 ```bash
 sudo apt install -y pandoc wl-clipboard xclip
 curl --proto '=https' --tlsv1.2 -fsSL https://drop-sh.fullyjustified.net | sh  # Tectonic
 ```
+
+Tectonic may download TeX packages on its first run. Use a pre-populated TeX
+installation or an offline Tectonic cache when fully offline rendering is required.
 
 ---
 
@@ -111,7 +120,8 @@ note inspect demo/technical_note.md
 - **Zero Math Rasterization**: Math stays mathematical. Never converted to blurry PNGs or lossy screenshots.
 - **Fail-Safe Source Preservation**: Even if an external TeX compiler fails, your canonical Markdown source is guaranteed to be saved.
 - **Sandboxed Execution**: Runs with `--sandbox` and zero arbitrary LaTeX shell escapes. Safe for untrusted LLM outputs.
-- **100% Local**: No API keys, no network calls, zero telemetry.
+- **Local-first**: No API keys, no application telemetry, and no cloud service. The
+  optional Tectonic PDF tool may access package repositories unless configured offline.
 
 ---
 

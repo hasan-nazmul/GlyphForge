@@ -117,7 +117,7 @@ class TestTableEdgeCases:
         doc = parse(md)
         rendered = render_markdown(doc)
 
-        lines = [l for l in rendered.splitlines() if l.strip().startswith("|")]
+        lines = [line for line in rendered.splitlines() if line.strip().startswith("|")]
         # Must have header, separator, and exactly one row
         assert len(lines) == 3
         # The data row must be on a single line with <br>

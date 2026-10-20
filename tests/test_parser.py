@@ -10,7 +10,7 @@ from glyphforge.model.blocks import (
     Table,
     ThematicBreak,
 )
-from glyphforge.model.inlines import Bold, InlineCode, InlineMath, Italic, Text
+from glyphforge.model.inlines import Bold, InlineCode, InlineMath, Italic
 from glyphforge.parser.markdown_parser import parse
 
 

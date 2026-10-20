@@ -25,7 +25,7 @@ from glyphforge.model.blocks import (
     TableCell,
     ThematicBreak,
 )
-from glyphforge.model.document import Document, Metadata
+from glyphforge.model.document import Document
 from glyphforge.model.inlines import (
     Bold,
     HardBreak,
@@ -382,7 +382,6 @@ def _parse_table_tokens(
     alignments: list[TableAlignment] = []
     i = start + 1  # skip table_open
     in_head = False
-    in_body = False
     current_row: list[TableCell] = []
 
     while i < len(tokens):
@@ -398,10 +397,8 @@ def _parse_table_tokens(
             in_head = False
             i += 1
         elif tok.type == "tbody_open":
-            in_body = True
             i += 1
         elif tok.type == "tbody_close":
-            in_body = False
             i += 1
         elif tok.type == "tr_open":
             current_row = []

@@ -1,15 +1,12 @@
 """Tests for HTMLRenderer."""
 
-from pathlib import Path
 
-import pytest
 
 from glyphforge.model.blocks import (
     BlockQuote,
     CodeBlock,
     DisplayMath,
     Heading,
-    ImageBlock,
     List,
     ListItem,
     Paragraph,
@@ -31,14 +28,12 @@ from glyphforge.model.inlines import (
     Strikethrough,
     Text,
 )
-from glyphforge.parser.markdown_parser import parse
-from glyphforge.renderers.html import HTMLRenderer, _slugify, render_html
+from glyphforge.renderers.html import _slugify, render_html
 
 
 class TestHTMLRendererBasics:
     def test_doctype_and_html_structure(self):
         doc = Document(blocks=[Paragraph([Text("Hello world")])])
-        renderer = HTMLRenderer()
         html = render_html(doc)
         assert "<!DOCTYPE html>" in html
         assert '<html lang="en">' in html

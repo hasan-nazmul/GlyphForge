@@ -1,8 +1,7 @@
 """Tests for the math lexer state machine."""
 
-import pytest
 
-from glyphforge.parser.math_lexer import MathKind, MathSpan, scan_math
+from glyphforge.parser.math_lexer import MathKind, scan_math
 
 
 class TestInlineMath:

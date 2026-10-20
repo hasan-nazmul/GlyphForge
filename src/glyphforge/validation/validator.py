@@ -191,7 +191,7 @@ def _check_heading_hierarchy(blocks: list[Block], issues: list[ValidationIssue])
         prev_level = headings[i - 1].level
         curr_level = headings[i].level
         if curr_level > prev_level + 1:
-            skipped = ", ".join(f"H{l}" for l in range(prev_level + 1, curr_level))
+            skipped = ", ".join(f"H{level}" for level in range(prev_level + 1, curr_level))
             issues.append(
                 ValidationIssue(
                     Severity.WARNING,

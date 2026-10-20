@@ -13,9 +13,7 @@ Features:
 
 from __future__ import annotations
 
-import shutil
 import subprocess
-import tempfile
 from pathlib import Path
 from typing import Any
 

@@ -8,8 +8,7 @@ from __future__ import annotations
 
 import re
 
-from glyphforge.model.blocks import Table, TableAlignment, TableCell
-from glyphforge.model.inlines import Inline
+from glyphforge.model.blocks import TableAlignment
 
 
 def parse_alignment(separator_row: str) -> list[TableAlignment]:

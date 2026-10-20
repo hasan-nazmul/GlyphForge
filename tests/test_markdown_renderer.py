@@ -11,7 +11,6 @@ from glyphforge.model.blocks import (
     TableAlignment,
     TableCell,
     ThematicBreak,
-    BlockQuote,
 )
 from glyphforge.model.document import Document, Metadata
 from glyphforge.model.inlines import Bold, InlineCode, InlineMath, Italic, Text

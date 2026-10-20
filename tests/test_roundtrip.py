@@ -3,9 +3,7 @@
 The invariant: normalize(normalize(input)) == normalize(input)
 """
 
-from pathlib import Path
 
-import pytest
 
 from glyphforge.parser.markdown_parser import parse
 from glyphforge.renderers.markdown import render_markdown

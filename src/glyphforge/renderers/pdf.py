@@ -19,7 +19,7 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-from glyphforge.deps import DependencyStatus, check_pandoc, check_tectonic
+from glyphforge.deps import check_pandoc, check_tectonic
 from glyphforge.model.document import Document
 from glyphforge.renderers.base import BaseRenderer
 from glyphforge.renderers.markdown import render_markdown

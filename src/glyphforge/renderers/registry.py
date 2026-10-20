@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Type, Union
+from typing import Union
 
 from glyphforge.config import OutputFormat
 from glyphforge.renderers.base import BaseRenderer
